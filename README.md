@@ -133,27 +133,50 @@ TP53-VUS-Predict/
 |   |-- alphamissense_crossref.py           # [Step 4] AlphaMissense cross-reference
 |   |-- pymol_variant_views.py              # [Step 5] Structural analysis & PyMOL
 |   |-- tp53_variant_views.pml              # PyMOL render script (generated)
+|   |-- requirements.txt                    # Libraries and Dependencies for the Code to work
 |
 |-- figures/
-|   |-- plots/
-|   |   |-- tp53_llr_distribution.png       # ESM-2 LLR score distribution
-|   |   |-- tp53_domain_comparison.png      # Domain-level statistical comparison
-|   |   |-- tp53_esm2_vs_alphamissense.png  # Cross-validation scatter plot
+|   |-- main/
+|   |   |-- fig1_llr_distribution.png.png   # ESM-2 LLR score distribution
+|   |   |-- fig2_model_concordance.png.png  # Cross-validation scatter plot
+|   |   |-- fig3_domain_enrichment.png      # Domain-level statistical comparison
+|   |   |-- fig4a_L257R_structural.png
+|   |   |-- fig4b_V157D_structural.png
+|   |   |-- fig4c_R248P_structural.png
+|   |   |-- fig4d_C176R_structural.png
+|   |   |-- fig4e_R280I_structural.png
+|   |   |-- fig4f_overview_structural.png
 |   |
-|   |-- pymol_renders/
-|       |-- tp53_L257R_variant_view_pymol.png
-|       |-- tp53_V157D_variant_view_pymol.png
-|       |-- tp53_R248P_variant_view_pymol.png
-|       |-- tp53_C176R_variant_view_pymol.png
-|       |-- tp53_R280I_variant_view_pymol.png
-|       |-- tp53_all_variants_overview_pymol.png
-|       |-- (+ BioPython-generated structural views)
+|   |-- supplementary/
+|       |-- figS1a_L257R_3d_context.png
+|       |-- figS1b_V157D_3d_context.png
+|       |-- figS1c_R248P_3d_context.png
+|       |-- figS1d_C176R_3d_context.png
+|       |-- figS1e_R280I_3d_context.png
+|       |-- figS1f_overview_3d_context.png
+|       |-- figS2a_L257R_pymol_v1.png
+|       |-- figS2b_V157D_pymol_v1.png
+|       |-- figS2c_R248P_pymol_v1.png
+|       |-- figS2d_C176R_pymol_v1.png
+|       |-- figS2e_R280I_pymol_v1.png
+|       |-- figS2f_overview_pymol_v1.png
 |
-|-- manuscript/                             # LaTeX manuscript (future)
-|-- docs/                                   # Additional documentation
-|-- requirements.txt
+|-- vizualization/                          # Vizualization and Render Data Files
+|   |-- 1tup.pdb
+|   |-- pdb1tup.ent
+|   |-- tp53_publication.pse
+|   |-- tp53_variant_views.pml
+|   |-- tp53_variants.pse
+|
+|-- manuscript/                             # LaTeX manuscript
+|   |-- manuscript.tex
+|   |-- manuscript.pdf
+|
+|-- article/                                # Article For Medium & Other Sites.
+|   |-- article.md
+|
 |-- LICENSE                                 # MIT
-|-- .gitignore
+|-- README.md
 ```
 
 ---
