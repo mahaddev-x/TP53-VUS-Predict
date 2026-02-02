@@ -193,8 +193,8 @@ TP53-VUS-Predict/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/mahaddevx/TP53-AI-Screening.git
-cd TP53-AI-Screening
+git clone https://github.com/mahaddevx/TP53-VUS-Predict.git
+cd TP53-VUS-Predict
 pip install -r requirements.txt
 ```
 
