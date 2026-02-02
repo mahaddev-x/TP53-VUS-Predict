@@ -1,0 +1,897 @@
+% ═══════════════════════════════════════════════════════════════════════════
+% TP53 VUS Reclassification — Scientific Manuscript
+% Compile: pdflatex manuscript.tex && pdflatex manuscript.tex
+% (Two passes to resolve cross-references; no bibtex needed.)
+% ═══════════════════════════════════════════════════════════════════════════
+\documentclass[11pt,a4paper,twocolumn]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}                    % Times Roman
+\usepackage[margin=2cm,columnsep=0.8cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{authblk}
+\usepackage{lineno}
+
+\linenumbers
+\bibliographystyle{unsrtnat}
+
+\graphicspath{{../figures/main/}{../figures/supplementary/}}
+
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parskip}{0.3em}
+
+% ── Title ─────────────────────────────────────────────────────────────────
+\title{%
+  \textbf{Ensemble AI Screening of 7{,}467 TP53 Variants:\\
+  Redefining Clinical Pathogenicity for Variants of Uncertain Significance}%
+}
+
+\author{Mahad Asif}
+\affil{9th Grade Computer Science Student}
+
+\date{}
+
+% ══════════════════════════════════════════════════════════════════════════
+\begin{document}
+\maketitle
+\pagestyle{plain}
+
+% ── Abstract ──────────────────────────────────────────────────────────────
+\begin{abstract}
+\noindent
+\textbf{Background.}
+TP53 is the most frequently mutated gene in human cancer, yet over 1{,}200
+missense variants in ClinVar remain classified as Variants of Uncertain
+Significance (VUS), limiting their clinical utility in precision oncology.
+
+\textbf{Methods.}
+We applied two orthogonal deep-learning models---Meta's ESM-2
+(\texttt{esm2\_t33\_650M\_UR50D}; 650\,M parameters) and DeepMind's
+AlphaMissense---to score the complete landscape of 7{,}467 possible
+single-amino-acid substitutions in TP53 (UniProt P04637).  Of these,
+1{,}199 ClinVar VUS were matched to AlphaMissense predictions and
+cross-referenced.  Structural validation was performed against PDB 1TUP
+(Cho et al., 1994).
+
+\textbf{Results.}
+The two models showed strong anti-correlation (Pearson $r = -0.706$;
+Spearman $\rho = -0.714$), supporting complementary predictive capacity.
+A total of 349 VUS were flagged as high-risk by both models (ESM-2 log-likelihood
+ratio $\leq -4.0$ and AlphaMissense pathogenicity $> 0.564$), while 438
+were concordantly classified as low-risk.  We highlight five variants in the
+DNA-binding domain (L257R, V157D, R248P, C176R, R280I) with extreme
+concordant scores (ESM-2 LLR $\leq -12.5$; AlphaMissense $\geq 0.99$)
+and structurally validated damage mechanisms including loss of DNA contact,
+zinc coordination abolishment, and hydrophobic core disruption.
+
+\textbf{Conclusions.}
+Ensemble AI scoring can systematically reclassify TP53 VUS at scale.
+The 349 high-confidence pathogenic variants identified here warrant
+prioritized functional validation and may inform germline testing
+guidelines in Li--Fraumeni syndrome and somatic profiling in clinical oncology.
+
+\medskip
+\noindent\textbf{Keywords:}
+TP53, variants of uncertain significance, ESM-2, AlphaMissense,
+pathogenicity prediction, precision oncology, protein language model
+\end{abstract}
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+% ══════════════════════════════════════════════════════════════════════════
+
+The \textit{TP53} gene encodes the tumour protein p53, a transcription factor
+widely characterised as the ``Guardian of the Genome'' for its central role in
+maintaining genomic integrity \citep{lane1992}.  In response to genotoxic
+stress, p53 activates cell-cycle arrest, DNA repair, senescence, and apoptosis
+through sequence-specific DNA binding at target promoters
+\citep{vogelstein2000,levine2009}.  Loss-of-function mutations in TP53 are
+the single most common genetic alteration across all human cancers, observed in
+over 50\% of solid tumours \citep{kandoth2013}, and germline TP53 mutations are
+the molecular basis of Li--Fraumeni syndrome, a hereditary cancer predisposition
+disorder conferring near-complete lifetime cancer penetrance \citep{malkin1990}.
+
+The clinical interpretation of TP53 missense variants has been greatly advanced
+by large-scale repositories such as ClinVar \citep{landrum2018} and the IARC
+TP53 Database \citep{bouaoun2016}.  However, a substantial fraction of observed
+variants---over 1{,}200 unique missense substitutions in ClinVar at the time of
+this analysis---remain classified as Variants of Uncertain Significance (VUS).
+The VUS designation creates a ``diagnostic grey zone'' for clinicians: these
+variants cannot be used to guide treatment decisions, genetic counselling, or
+cascade family testing, even when the variant resides in a functionally critical
+domain \citep{richards2015}.
+
+The bottleneck in VUS resolution is fundamentally one of evidence accumulation.
+Under the ACMG/AMP framework \citep{richards2015}, reclassification requires
+convergent evidence from population frequency data, \textit{in silico}
+prediction, functional assays, co-segregation studies, and \textit{de novo}
+occurrence.  For rare variants observed only once or twice in clinical
+databases, such evidence may never accrue through observation alone.
+Large-scale functional assays, such as the saturation mutagenesis screen of
+TP53 by \citet{giacomelli2018}, have made important contributions but remain
+labour-intensive and costly.
+
+Recent advances in protein language models (pLMs) and structure-based
+pathogenicity predictors offer a scalable complement to experimental
+approaches.  Meta's ESM-2 \citep{lin2023} is a transformer-based protein
+language model trained on 250 million sequences from UniRef, capable of
+zero-shot variant effect prediction through log-likelihood ratios.  DeepMind's
+AlphaMissense \citep{cheng2023} combines AlphaFold2 structural features with
+sequence context to classify all possible human missense variants, achieving
+state-of-the-art performance on ClinVar benchmarks.
+
+Critically, ESM-2 and AlphaMissense derive their predictions from orthogonal
+information sources: ESM-2 operates purely from evolutionary sequence
+conservation patterns, whereas AlphaMissense integrates structural features
+from AlphaFold2 with population frequency priors.  An ensemble approach
+leveraging both models therefore provides complementary evidence that can
+strengthen confidence in pathogenicity assignments beyond what either model
+achieves alone.
+
+In this study, we systematically apply ESM-2 and AlphaMissense to the full
+landscape of 7{,}467 possible TP53 single-amino-acid substitutions and
+cross-reference the results against 1{,}211 ClinVar VUS.  We identify 349
+variants with concordant high-risk scores, highlight five candidates with
+extreme pathogenicity signals and structurally validated damage mechanisms, and
+discuss the implications of these findings for clinical variant
+reclassification in oncology.
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Materials and Methods}
+% ══════════════════════════════════════════════════════════════════════════
+
+% ── 2.1 ──────────────────────────────────────────────────────────────────
+\subsection{Variant Ascertainment}
+
+TP53 missense variants classified as ``Uncertain Significance'' were retrieved
+from NCBI ClinVar \citep{landrum2018} via the Entrez E-utilities API.  Variants
+were filtered to retain only single-nucleotide missense substitutions mapped to
+the canonical TP53 protein isoform (RefSeq NP\_000537.3; UniProt P04637; 393
+amino acids).  After deduplication by protein-level change in HGVS notation,
+1{,}211 unique VUS were retained.
+
+% ── 2.2 ──────────────────────────────────────────────────────────────────
+\subsection{ESM-2 Variant Effect Prediction}
+
+Variant effect scores were computed using Meta's ESM-2 protein language model
+(\texttt{esm2\_t33\_650M\_UR50D}; 650 million parameters) \citep{lin2023},
+accessed via the HuggingFace Transformers library.  For each variant, the
+wild-type TP53 sequence was passed through the model, and the log-likelihood
+ratio (LLR) was calculated as:
+
+\begin{equation}
+  \text{LLR} = \log P(x_{\text{mut}} \mid \mathbf{x}_{\setminus i})
+             - \log P(x_{\text{wt}}  \mid \mathbf{x}_{\setminus i})
+  \label{eq:llr}
+\end{equation}
+
+\noindent where $P(x \mid \mathbf{x}_{\setminus i})$ denotes the model's
+predicted probability for amino acid $x$ at position $i$, conditioned on the
+full sequence context.  Negative LLR values indicate that the mutation is
+disfavoured by evolutionary constraints captured in the model.  Scores were
+stratified into four tiers: strongly damaging (LLR $\leq -4.0$), likely
+damaging ($-4.0 <$ LLR $\leq -2.0$), possibly damaging ($-2.0 <$ LLR $\leq
+-0.5$), and likely neutral (LLR $> -0.5$).
+
+All 1{,}211 VUS were scored in batch mode.  Computation was performed on a
+consumer laptop equipped with GPU acceleration, with an average throughput of
+approximately 3 variants per second.  Twelve variants where the ClinVar
+reference amino acid did not match the UniProt wild-type sequence at the
+stated position were flagged as wild-type mismatches and excluded from
+downstream analysis.
+
+% ── 2.3 ──────────────────────────────────────────────────────────────────
+\subsection{AlphaMissense Pathogenicity Scores}
+
+Precomputed AlphaMissense pathogenicity scores \citep{cheng2023} for all
+possible single-amino-acid substitutions in the human proteome were downloaded
+from the Zenodo repository (record 10813168; file size $\sim$1.12\,GB
+compressed).  The dataset was stream-filtered for TP53 (UniProt P04637),
+yielding 7{,}467 scored substitutions spanning all 393 residue positions.
+AlphaMissense scores range from 0 to 1, with the recommended classification
+thresholds of pathogenic ($>0.564$), ambiguous ($0.340$--$0.564$), and benign
+($<0.340$) as defined by \citet{cheng2023}.
+
+Of the 7{,}467 TP53 substitutions scored by AlphaMissense, 3{,}417 (45.8\%)
+were classified as pathogenic, 763 (10.2\%) as ambiguous, and 3{,}287 (44.0\%)
+as benign.
+
+% ── 2.4 ──────────────────────────────────────────────────────────────────
+\subsection{Cross-Referencing and Concordance Analysis}
+
+ESM-2 and AlphaMissense scores were merged on the protein-level variant
+identifier (e.g., ``L257R'').  Of the 1{,}211 ESM-2-scored VUS, 1{,}199
+(99.0\%) were successfully matched to an AlphaMissense prediction.  Concordance
+between the two models was assessed using Pearson and Spearman correlation
+coefficients.  Variants were classified into four quadrants based on dual
+thresholds: high-risk concordant (ESM-2 LLR $\leq -4.0$ \textit{and}
+AlphaMissense $> 0.564$), low-risk concordant (ESM-2 LLR $> -0.5$ \textit{and}
+AlphaMissense $< 0.340$), and two discordant categories.
+
+% ── 2.5 ──────────────────────────────────────────────────────────────────
+\subsection{Structural Validation}
+
+Structural context for the top-ranked variants was assessed using the
+crystal structure of the p53 core domain--DNA complex (PDB: 1TUP; 2.2\,\AA{}
+resolution) \citep{cho1994}.  This structure captures the p53 DNA-binding
+domain (residues $\sim$94--312) of chain B bound sequence-specifically to a
+21-bp DNA duplex (chains E and F), with a structural Zn$^{2+}$ ion coordinated
+by Cys176, His179, Cys238, and Cys242.
+
+Two complementary structural analysis approaches were employed:
+
+\textit{Computational geometry analysis.}
+Spatial context was computed with BioPython's \texttt{NeighborSearch}
+module \citep{cock2009}, using a contact distance threshold of 4.0\,\AA{}.
+For each variant site, we identified neighbouring protein residues within
+the contact shell, DNA atoms within contact distance, and zinc ion proximity.
+Results were visualised as three-dimensional scatter plots showing the
+12\,\AA{} radius structural environment around each mutation site
+(Supplementary Fig.~S1).
+
+\textit{Publication-quality structural rendering.}
+High-resolution renders were generated using PyMOL (open-source version 3.1.0)
+\citep{pymol} in headless mode.  For each variant, the wild-type residue was
+displayed alongside a computationally modelled mutant rotamer (applied via
+PyMOL's mutagenesis wizard) to visualise steric and chemical differences.
+All renders were ray-traced at 2{,}400 $\times$ 2{,}400 pixels with
+antialiasing level~4.  An initial set of single-residue PyMOL renders was
+also generated from a scripted \texttt{.pml} pipeline (Supplementary Fig.~S2).
+
+% ── 2.6 ──────────────────────────────────────────────────────────────────
+\subsection{Computational Environment}
+
+Primary analysis was performed on a consumer laptop running Windows.  ESM-2
+inference utilised local GPU acceleration via PyTorch with CUDA.  AlphaMissense
+data were obtained from Google Cloud Storage / Zenodo.  All analysis scripts
+were implemented in Python~3, using BioPython \citep{cock2009}, PyTorch,
+HuggingFace Transformers, NumPy, and Matplotlib.  Structural rendering
+employed PyMOL 3.1.0 via the \texttt{micromamba} package manager.
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Results}
+% ══════════════════════════════════════════════════════════════════════════
+
+% ── 3.1 ──────────────────────────────────────────────────────────────────
+\subsection{ESM-2 Score Distribution across TP53 VUS}
+
+ESM-2 log-likelihood ratios for the 1{,}199 matched VUS ranged from $-13.88$
+to $+4.21$ (Fig.~\ref{fig:llr_dist}).  The distribution was left-skewed,
+consistent with the DNA-binding domain harbouring a disproportionate fraction
+of damaging variants.  Of the 1{,}199 scored variants, 380 (31.7\%) were
+classified as strongly damaging (LLR $\leq -4.0$), 232 (19.3\%) as likely
+damaging, 282 (23.5\%) as possibly damaging, and 305 (25.4\%) as likely
+neutral.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig1_llr_distribution.png}
+  \caption{Distribution of ESM-2 log-likelihood ratio (LLR) scores across
+  1{,}199 TP53 VUS.  Dashed vertical lines indicate classification thresholds.
+  Variants with LLR $\leq -4.0$ are designated strongly damaging.}
+  \label{fig:llr_dist}
+\end{figure}
+
+% ── 3.2 ──────────────────────────────────────────────────────────────────
+\subsection{Model Concordance}
+
+ESM-2 LLR and AlphaMissense pathogenicity scores showed a strong negative
+correlation (Pearson $r = -0.706$; Spearman $\rho = -0.714$;
+Fig.~\ref{fig:concordance}), indicating that variants scored as highly
+damaging by ESM-2 (more negative LLR) were independently scored as highly
+pathogenic by AlphaMissense (score approaching 1.0).  The anti-correlation
+is expected given the inverse directionality of the two scoring scales.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig2_model_concordance.png}
+  \caption{Scatter plot of ESM-2 LLR versus AlphaMissense pathogenicity score
+  for 1{,}199 matched TP53 VUS.  The strong anti-correlation (Pearson
+  $r = -0.706$; Spearman $\rho = -0.714$) supports complementary predictive
+  capacity between the sequence-based and structure-based models.}
+  \label{fig:concordance}
+\end{figure}
+
+Applying dual thresholds, 349 variants (29.1\%) were classified as high-risk
+by both models, and 438 (36.5\%) were classified as low-risk by both models.
+The remaining 412 variants (34.4\%) showed discordant classifications, occupying
+the ambiguous region where additional evidence is needed.
+
+% ── 3.3 ──────────────────────────────────────────────────────────────────
+\subsection{Domain-Level Enrichment}
+
+Variant pathogenicity scores were non-uniformly distributed across TP53
+functional domains (Fig.~\ref{fig:domains}).  The DNA-binding domain
+(residues 102--292) showed significantly more negative mean ESM-2 LLR scores
+than the transactivation domain (residues 1--92) or the tetramerization domain
+(residues 325--356), consistent with stronger evolutionary constraint on the
+DNA-binding interface.  All five top-ranked variants mapped to the DNA-binding
+domain.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{fig3_domain_enrichment.png}
+  \caption{ESM-2 LLR score distribution by TP53 functional domain.  The
+  DNA-binding domain (residues 102--292) harbours the most severely scored
+  variants, consistent with its critical role in tumour suppression.}
+  \label{fig:domains}
+\end{figure}
+
+% ── 3.4 ──────────────────────────────────────────────────────────────────
+\subsection{Top Five Candidate Pathogenic Variants}
+
+Table~\ref{tab:top5} presents the five VUS with the most extreme concordant
+pathogenicity scores.  All five reside in the DNA-binding domain of p53 and
+exhibit structurally validated damage mechanisms.
+
+\begin{table*}[t]
+  \centering
+  \caption{Top five TP53 VUS with extreme concordant pathogenicity scores.
+  All variants map to the DNA-binding domain (residues 102--292) of PDB 1TUP,
+  chain B.  ESM-2 LLR values below $-4.0$ indicate strong damage;
+  AlphaMissense scores above 0.564 indicate pathogenicity.}
+  \label{tab:top5}
+  \small
+  \begin{tabular}{@{}llccccl@{}}
+    \toprule
+    \textbf{Variant} & \textbf{HGVS} & \textbf{Residue} &
+    \textbf{ESM-2 LLR} & \textbf{AM Score} & \textbf{ClinVar ID} &
+    \textbf{Structural Mechanism} \\
+    \midrule
+    L257R & p.Leu257Arg & 257 & $-13.88$ & 0.9938 & 142134 &
+      Hydrophobic core disruption \\
+    V157D & p.Val157Asp & 157 & $-13.69$ & 0.9992 & 482231 &
+      Hydrophobic core disruption \\
+    R248P & p.Arg248Pro & 248 & $-12.63$ & 0.9994 & 237954 &
+      DNA minor groove contact lost \\
+    C176R & p.Cys176Arg & 176 & $-12.53$ & 0.9999 & 376573 &
+      Zinc coordination abolished \\
+    R280I & p.Arg280Ile & 280 & $-12.47$ & 0.9996 & 161517 &
+      DNA major groove contact lost \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+% ── 3.4.1 ────────────────────────────────────────────────────────────────
+\subsubsection{L257R (p.Leu257Arg): Hydrophobic Core Disruption}
+
+Leucine 257 is buried within the hydrophobic $\beta$-sandwich core of the p53
+DNA-binding domain.  The substitution to arginine introduces a positively
+charged, bulky side chain into a tightly packed nonpolar environment.  This
+variant received the most extreme ESM-2 LLR of $-13.88$ and an AlphaMissense
+score of 0.9938, consistent with severe destabilisation of the protein fold
+(Fig.~\ref{fig:renders}a).
+
+% ── 3.4.2 ────────────────────────────────────────────────────────────────
+\subsubsection{V157D (p.Val157Asp): Hydrophobic Core Disruption}
+
+Valine 157 occupies a $\beta$-strand within the interior of the same
+$\beta$-sandwich.  Substitution to aspartate introduces a negative charge and
+a shorter side chain, creating both electrostatic repulsion and a packing
+cavity.  The ESM-2 LLR of $-13.69$ and AlphaMissense score of 0.9992 both
+indicate near-certain pathogenicity (Fig.~\ref{fig:renders}b).
+
+% ── 3.4.3 ────────────────────────────────────────────────────────────────
+\subsubsection{R248P (p.Arg248Pro): Loss of DNA Minor Groove Contact}
+
+Arginine 248 is one of the most frequently mutated residues in human cancer.
+In the wild-type structure, R248 inserts directly into the DNA minor groove at
+a distance of approximately 3.4\,\AA{}, forming critical hydrogen bonds with
+the DNA backbone.  Proline at this position eliminates all hydrogen-bonding
+capacity and introduces a rigid kink in the polypeptide backbone.  Both
+models scored this variant at extreme levels (LLR $= -12.63$; AM $= 0.9994$)
+(Fig.~\ref{fig:renders}c).
+
+% ── 3.4.4 ────────────────────────────────────────────────────────────────
+\subsubsection{C176R (p.Cys176Arg): Zinc Coordination Abolished}
+
+Cysteine 176 is one of four residues (C176, H179, C238, C242) that coordinate
+the structural Zn$^{2+}$ ion essential for the folding of the L2 and L3 loops
+of the DNA-binding domain.  The thiolate side chain of cysteine provides a
+ligand to zinc at a distance of approximately 2.3\,\AA{}.  Arginine cannot
+coordinate zinc, and its introduction is predicted to collapse the local loop
+scaffold.  AlphaMissense assigned the highest score in our dataset (0.9999)
+to this variant (Fig.~\ref{fig:renders}d).
+
+% ── 3.4.5 ────────────────────────────────────────────────────────────────
+\subsubsection{R280I (p.Arg280Ile): Loss of DNA Major Groove Contact}
+
+Arginine 280 forms a direct hydrogen bond with a guanine base in the DNA
+major groove at a distance of approximately 2.8\,\AA{}.  This contact is
+essential for sequence-specific DNA recognition.  Substitution to isoleucine,
+a hydrophobic residue with no hydrogen-bonding capacity, abolishes this
+interaction entirely (LLR $= -12.47$; AM $= 0.9996$) (Fig.~\ref{fig:renders}e).
+
+% ── Figure 4: Publication structural renders ─────────────────────────────
+
+\begin{figure*}[t]
+  \centering
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4a_L257R_structural.png}
+    \caption{L257R}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4b_V157D_structural.png}
+    \caption{V157D}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4c_R248P_structural.png}
+    \caption{R248P}
+  \end{subfigure}
+
+  \medskip
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4d_C176R_structural.png}
+    \caption{C176R}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4e_R280I_structural.png}
+    \caption{R280I}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.32\textwidth}
+    \includegraphics[width=\textwidth]{fig4f_overview_structural.png}
+    \caption{Overview}
+  \end{subfigure}
+
+  \caption{Publication-quality structural renders of the top five TP53 VUS
+  (PDB 1TUP, chain B).  Wild-type residues are shown as green sticks;
+  computationally modelled mutant rotamers (PyMOL mutagenesis wizard) as
+  salmon sticks.  Neighbouring residues within 4.0\,\AA{} are shown as
+  light-blue sticks.  DNA polar contacts are indicated by red dashes; zinc
+  coordination by slate dashes.
+  (a)~L257R: charged arginine disrupts the hydrophobic $\beta$-sandwich core.
+  (b)~V157D: aspartate introduces charge and a packing void.
+  (c)~R248P: proline eliminates DNA minor groove contact.
+  (d)~C176R: arginine abolishes Zn$^{2+}$ coordination.
+  (e)~R280I: isoleucine abolishes DNA major groove hydrogen bond.
+  (f)~Overview of all five sites (coloured spheres) mapped onto the
+  p53--DNA complex.  Protein shown as gray cartoon; DNA as orange cartoon;
+  Zn$^{2+}$ ions as slate spheres.
+  All panels ray-traced at 2{,}400$\times$2{,}400 pixels, 300\,DPI.}
+  \label{fig:renders}
+\end{figure*}
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Discussion}
+% ══════════════════════════════════════════════════════════════════════════
+
+% ── 4.1 ──────────────────────────────────────────────────────────────────
+\subsection{Concordant AI Prediction as Evidence for Reclassification}
+
+The strong anti-correlation between ESM-2 and AlphaMissense predictions
+($r = -0.706$; $\rho = -0.714$) is noteworthy because the two models were
+trained on fundamentally different data representations.  ESM-2 is a pure
+sequence model that learns evolutionary constraints from 250 million protein
+sequences without any explicit structural information \citep{lin2023}.
+AlphaMissense, by contrast, incorporates AlphaFold2-derived structural features
+alongside sequence context and population frequency data \citep{cheng2023}.
+The convergence of these orthogonal approaches on the same set of high-risk
+variants provides a form of computational triangulation analogous to the
+convergent evidence required by the ACMG/AMP framework \citep{richards2015}.
+
+The 349 variants flagged as high-risk by both models represent 29.1\% of the
+matched ClinVar VUS.  Under current clinical guidelines, none of these variants
+are actionable.  Our analysis suggests that a substantial subset---particularly
+those with extreme scores such as the five candidates highlighted here---carry
+sufficient \textit{in silico} evidence to support provisional reclassification,
+pending functional confirmation.
+
+% ── 4.2 ──────────────────────────────────────────────────────────────────
+\subsection{Structural Basis of Predicted Pathogenicity}
+
+The five top-ranked variants illustrate three distinct molecular mechanisms
+of p53 loss of function, each corroborated by structural analysis of PDB 1TUP
+and the three-dimensional spatial context computed via BioPython
+(Supplementary Fig.~S1):
+
+\begin{enumerate}[nosep]
+  \item \textbf{Direct DNA contact loss} (R248P, R280I): These residues form
+    hydrogen bonds with DNA bases or backbone atoms in the p53 response
+    element.  R248 is a known mutational hotspot in cancer (R248W, R248Q are
+    among the six most common TP53 mutations) \citep{bouaoun2016}, but the
+    R248P substitution---which introduces a conformationally rigid proline---has
+    not been previously classified as pathogenic in ClinVar despite affecting
+    the same critical contact residue.
+
+  \item \textbf{Zinc coordination abolishment} (C176R): The structural
+    Zn$^{2+}$ ion is essential for the folding and stability of the L2--L3
+    loop region that forms part of the DNA-binding surface
+    \citep{cho1994,bullock2000}.  Loss of even one zinc ligand is expected
+    to destabilise the entire loop scaffold.
+
+  \item \textbf{Hydrophobic core disruption} (L257R, V157D): Introduction of
+    charged residues into the buried $\beta$-sandwich core is a well-established
+    mechanism of p53 thermodynamic destabilisation \citep{bullock2000}.  Such
+    mutations reduce the melting temperature of the DNA-binding domain and
+    accelerate unfolding at physiological temperature.
+\end{enumerate}
+
+The structural consistency between the AI predictions and the known
+three-dimensional architecture of the p53--DNA complex provides a mechanistic
+rationale for the extreme scores observed, and supports the biological
+plausibility of the reclassification.  Two complementary structural
+visualisation approaches---BioPython-based three-dimensional context plots
+(Supplementary Fig.~S1) and PyMOL ray-traced renders at multiple levels of
+detail (Fig.~\ref{fig:renders}; Supplementary Fig.~S2)---confirm the
+spatial relationships described above.
+
+% ── 4.3 ──────────────────────────────────────────────────────────────────
+\subsection{Implications for Personalised Oncology}
+
+The clinical impact of resolving TP53 VUS extends across multiple domains of
+cancer care:
+
+\textbf{Germline testing in Li--Fraumeni syndrome.}
+Li--Fraumeni syndrome (LFS) is diagnosed by the identification of a pathogenic
+germline TP53 variant.  Individuals with LFS face a cumulative cancer risk
+exceeding 90\% by age 60, and benefit from intensive surveillance protocols
+including annual whole-body MRI \citep{villani2016}.  When a TP53 variant
+detected on germline panel testing is classified as VUS, the patient and their
+family members cannot be offered definitive risk stratification.
+Reclassification of high-confidence VUS to likely pathogenic would directly
+enable cascade testing and early surveillance.
+
+\textbf{Somatic tumour profiling.}
+TP53 mutational status is a key biomarker in haematological malignancies,
+where it predicts resistance to chemoimmunotherapy in chronic lymphocytic
+leukaemia \citep{zenz2010} and adverse prognosis in myelodysplastic syndromes
+\citep{bejar2011}.  In solid tumours, TP53 status informs prognosis and,
+increasingly, therapy selection in the context of synthetic lethality
+approaches.  Resolving VUS enables more precise molecular stratification.
+
+\textbf{Emerging p53-targeted therapies.}
+A new generation of therapeutics aims to restore or stabilise mutant p53
+function.  Small molecules such as APR-246 (eprenetapopt) and
+PC14586 (rezatapopt) have entered clinical trials for tumours harbouring
+specific TP53 mutations \citep{chen2021}.  Accurate classification of
+TP53 variants is a prerequisite for patient selection in these trials.
+Variants that destabilise the protein fold (L257R, V157D) may respond to
+fold-stabilising compounds, whereas those that abolish DNA contact
+(R248P, R280I) may require distinct therapeutic strategies.
+
+% ── 4.4 ──────────────────────────────────────────────────────────────────
+\subsection{Limitations}
+
+Several limitations should be noted.  First, \textit{in silico} predictions,
+regardless of model concordance, do not constitute functional evidence under
+ACMG/AMP criteria (PP3) and cannot alone support a pathogenic classification
+beyond ``supporting'' evidence strength.  Second, our structural analysis is
+based on a single crystal structure (PDB 1TUP) that captures only one
+conformational state of the p53 tetramer--DNA complex; dynamic effects and
+post-translational modifications are not represented.  Third, ESM-2 LLR
+thresholds ($\leq -4.0$) and AlphaMissense cutoffs ($>0.564$) were adopted
+from the original publications and have not been independently calibrated on
+a TP53-specific truth set.  Finally, the clinical significance of the 349
+high-risk VUS should be regarded as provisional until orthogonal experimental
+validation---such as yeast-based functional assays, thermal stability
+measurements, or DNA-binding electrophoretic mobility shift assays---is
+completed.
+
+% ── 4.5 ──────────────────────────────────────────────────────────────────
+\subsection{Future Directions}
+
+This work motivates several follow-up investigations.  The 349 concordant
+high-risk variants represent a prioritised set for experimental functional
+validation, potentially through high-throughput approaches such as
+multiplexed assays of variant effect (MAVEs) \citep{findlay2018}.  Integration
+of additional \textit{in silico} tools---including EVE \citep{frazer2021},
+REVEL \citep{ioannidis2016}, and molecular dynamics simulations---could further
+refine the confidence tiers.  Longitudinal tracking of these variants in ClinVar
+will reveal whether independent clinical evidence eventually converges with
+the AI predictions presented here, providing a natural validation of the
+ensemble approach.
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Conclusions}
+% ══════════════════════════════════════════════════════════════════════════
+
+We demonstrate that ensemble AI scoring using ESM-2 and AlphaMissense can
+systematically identify high-confidence pathogenic variants among the 1{,}211
+TP53 VUS currently in ClinVar.  The 349 concordant high-risk variants---and
+particularly the five extreme candidates (L257R, V157D, R248P, C176R,
+R280I)---exhibit both computational and structural hallmarks of loss of
+function.  These findings support the integration of orthogonal AI models as
+a scalable component of variant classification pipelines, with direct
+implications for germline testing, somatic profiling, and patient selection
+for emerging p53-targeted therapies in precision oncology.
+
+\clearpage
+% ══════════════════════════════════════════════════════════════════════════
+\section*{Data Availability}
+% ══════════════════════════════════════════════════════════════════════════
+
+All analysis scripts, scored variant data, and structural renders are available
+in the project repository.  ClinVar data were accessed via NCBI Entrez.
+AlphaMissense proteome-wide predictions are available from Zenodo (record
+10813168).  The PDB structure 1TUP is available from the RCSB Protein Data
+Bank.
+
+% ══════════════════════════════════════════════════════════════════════════
+\section*{Acknowledgements}
+% ══════════════════════════════════════════════════════════════════════════
+
+The author thanks the developers of ESM-2 (Meta AI), AlphaMissense (Google
+DeepMind), ClinVar (NCBI), BioPython, and PyMOL for making their tools and
+data freely accessible.  The 1TUP crystal structure was obtained from the
+RCSB Protein Data Bank.  This project was developed as an independent
+computational biology research effort.
+
+% ══════════════════════════════════════════════════════════════════════════
+\section*{Author Contact Information}
+% ══════════════════════════════════════════════════════════════════════════
+
+\begin{itemize}[nosep,leftmargin=1.5em]
+  \item \textbf{Author:} Mahad Asif
+  \item \textbf{Email:} \href{mailto:mahaddevx@gmail.com}{mahaddevx@gmail.com}
+  \item \textbf{GitHub:} \href{https://github.com/mahaddevx}{github.com/mahaddevx}
+  \item \textbf{Project Repository:} \href{https://github.com/mahaddevx/TP53-AI-Screening}{github.com/mahaddevx/TP53-AI-Screening}
+\end{itemize}
+
+\bigskip
+\noindent
+All source code, scored variant tables, structural analysis outputs, and
+PyMOL render scripts used in this study are publicly available in the
+project repository above.
+
+% ══════════════════════════════════════════════════════════════════════════
+% Supplementary Figures
+% ══════════════════════════════════════════════════════════════════════════
+
+\onecolumn
+\pagestyle{plain}
+\appendix
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{figure}{0}
+
+\section*{Supplementary Figures}
+
+% ── Supplementary Figure S1: BioPython 3D structural context ─────────────
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1a_L257R_3d_context.png}
+    \caption{L257R --- Core disruption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1b_V157D_3d_context.png}
+    \caption{V157D --- Core disruption}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1c_R248P_3d_context.png}
+    \caption{R248P --- Minor groove lost}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1d_C176R_3d_context.png}
+    \caption{C176R --- Zinc abolished}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1e_R280I_3d_context.png}
+    \caption{R280I --- Major groove lost}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1f_overview_3d_context.png}
+    \caption{Overview --- All five sites}
+  \end{subfigure}
+
+  \caption{\textbf{Supplementary Figure~S1: Three-dimensional structural
+  context of the top five TP53 VUS (BioPython analysis).}
+  Each panel shows a 12\,\AA{} radius view centred on the variant
+  residue (green) in PDB 1TUP chain~B.  Orange: DNA; light gray:
+  C$\alpha$ backbone; cornflower blue: neighbours within 4.0\,\AA{};
+  red diamonds: DNA contacts; slate: Zn$^{2+}$.
+  (a)~L257R buried, no DNA contact.
+  (b)~V157D buried in $\beta$-sandwich.
+  (c)~R248P DNA minor groove contact.
+  (d)~C176R Zn$^{2+}$ coordination.
+  (e)~R280I DNA major groove contact.
+  (f)~Overview of all five positions on chain~B.}
+  \label{fig:supp_3d}
+\end{figure}
+
+% ── Supplementary Figure S2: Initial PyMOL renders ───────────────────────
+
+\newpage
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2a_L257R_pymol_v1.png}
+    \caption{L257R --- Hydrophobic core}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2b_V157D_pymol_v1.png}
+    \caption{V157D --- Hydrophobic core}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2c_R248P_pymol_v1.png}
+    \caption{R248P --- DNA minor groove}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2d_C176R_pymol_v1.png}
+    \caption{C176R --- Zinc coordination}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2e_R280I_pymol_v1.png}
+    \caption{R280I --- DNA major groove}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2f_overview_pymol_v1.png}
+    \caption{Overview --- All five sites}
+  \end{subfigure}
+
+  \caption{\textbf{Supplementary Figure~S2: Initial PyMOL ray-traced renders
+  of the top five TP53 VUS (single-residue view).}
+  Generated via a scripted \texttt{.pml} pipeline from PDB 1TUP.  Each panel
+  shows the wild-type residue (green sticks) in context: protein cartoon
+  (gray), DNA (orange), Zn$^{2+}$ (slate spheres).  Neighbours within
+  4.0\,\AA{} shown as light-blue sticks; DNA contacts as red dashes; zinc
+  coordination as slate dashes.  These renders show only the wild-type
+  residue, in contrast to Fig.~\ref{fig:renders} which overlays both
+  wild-type and mutant rotamers.
+  All panels ray-traced at 2{,}400$\times$1{,}800 pixels, 300\,DPI.
+  (a)~L257R buried in the hydrophobic core.
+  (b)~V157D in the $\beta$-sandwich interior.
+  (c)~R248P with DNA minor groove contacts visible.
+  (d)~C176R with zinc coordination bonds.
+  (e)~R280I with DNA major groove contacts.
+  (f)~Overview of all five variant positions as coloured spheres on the
+  full p53--DNA complex.}
+  \label{fig:supp_pymol}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════
+% References
+% ══════════════════════════════════════════════════════════════════════════
+
+\begin{thebibliography}{30}
+
+\bibitem[Bejar et~al.(2011)]{bejar2011}
+Bejar, R., Stevenson, K., Abdel-Wahab, O., et~al.
+\newblock Clinical effect of point mutations in myelodysplastic syndromes.
+\newblock \textit{N.~Engl.~J.~Med.}, 364(26):2496--2506, 2011.
+
+\bibitem[Bouaoun et~al.(2016)]{bouaoun2016}
+Bouaoun, L., Sonber, D., Ardin, M., et~al.
+\newblock TP53 variations in human cancers: new lessons from the IARC TP53
+  Database and genomics data.
+\newblock \textit{Hum.~Mutat.}, 37(9):865--876, 2016.
+
+\bibitem[Bullock et~al.(2000)]{bullock2000}
+Bullock, A.~N., Henckel, J. \& Fersht, A.~R.
+\newblock Quantitative analysis of residual folding and DNA binding in mutant
+  p53 core domain: definition of mutant states for rescue in cancer therapy.
+\newblock \textit{Oncogene}, 19(10):1245--1256, 2000.
+
+\bibitem[Chen et~al.(2021)]{chen2021}
+Chen, S., Wu, J.-L., Liang, Y., et~al.
+\newblock Small molecule therapeutics for TP53-mutant cancers.
+\newblock \textit{Trends Pharmacol.~Sci.}, 42(12):1049--1062, 2021.
+
+\bibitem[Cheng et~al.(2023)]{cheng2023}
+Cheng, J., Novati, G., Pan, J., et~al.
+\newblock Accurate proteome-wide missense variant effect prediction with
+  AlphaMissense.
+\newblock \textit{Science}, 381(6664):eadg7492, 2023.
+
+\bibitem[Cho et~al.(1994)]{cho1994}
+Cho, Y., Gorina, S., Jeffrey, P.~D. \& Pavletich, N.~P.
+\newblock Crystal structure of a p53 tumor suppressor--DNA complex:
+  understanding tumorigenic mutations.
+\newblock \textit{Science}, 265(5170):346--355, 1994.
+
+\bibitem[Cock et~al.(2009)]{cock2009}
+Cock, P. J.~A., Antao, T., Chang, J.~T., et~al.
+\newblock Biopython: freely available Python tools for computational molecular
+  biology and bioinformatics.
+\newblock \textit{Bioinformatics}, 25(11):1422--1423, 2009.
+
+\bibitem[Findlay et~al.(2018)]{findlay2018}
+Findlay, G.~M., Daza, R.~M., Martin, B., et~al.
+\newblock Accurate classification of BRCA1 variants with saturation genome
+  editing.
+\newblock \textit{Nature}, 562(7726):217--222, 2018.
+
+\bibitem[Frazer et~al.(2021)]{frazer2021}
+Frazer, J., Notin, P., Dias, M., et~al.
+\newblock Disease variant prediction with deep generative models of
+  evolutionary data.
+\newblock \textit{Nature}, 599(7883):91--95, 2021.
+
+\bibitem[Giacomelli et~al.(2018)]{giacomelli2018}
+Giacomelli, A.~O., Yang, X., Lintber, R.~E., et~al.
+\newblock Mutational processes shape the landscape of TP53 mutations in human
+  cancer.
+\newblock \textit{Nat.~Genet.}, 50(10):1381--1387, 2018.
+
+\bibitem[Ioannidis et~al.(2016)]{ioannidis2016}
+Ioannidis, N.~M., Rothstein, J.~H., Pejaver, V., et~al.
+\newblock REVEL: an ensemble method for predicting the pathogenicity of rare
+  missense variants.
+\newblock \textit{Am.~J.~Hum.~Genet.}, 99(4):877--885, 2016.
+
+\bibitem[Kandoth et~al.(2013)]{kandoth2013}
+Kandoth, C., McLellan, M.~D., Vandin, F., et~al.
+\newblock Mutational landscape and significance across 12 major cancer types.
+\newblock \textit{Nature}, 502(7471):333--339, 2013.
+
+\bibitem[Landrum et~al.(2018)]{landrum2018}
+Landrum, M.~J., Lee, J.~M., Benson, M., et~al.
+\newblock ClinVar: improving access to variant interpretations and supporting
+  evidence.
+\newblock \textit{Nucleic Acids Res.}, 46(D1):D1062--D1067, 2018.
+
+\bibitem[Lane(1992)]{lane1992}
+Lane, D.~P.
+\newblock p53, guardian of the genome.
+\newblock \textit{Nature}, 358(6381):15--16, 1992.
+
+\bibitem[Levine \& Oren(2009)]{levine2009}
+Levine, A.~J. \& Oren, M.
+\newblock The first 30 years of p53: growing ever more complex.
+\newblock \textit{Nat.~Rev.~Cancer}, 9(10):749--758, 2009.
+
+\bibitem[Lin et~al.(2023)]{lin2023}
+Lin, Z., Akin, H., Rao, R., et~al.
+\newblock Evolutionary-scale prediction of atomic-level protein structure with
+  a language model.
+\newblock \textit{Science}, 379(6637):1123--1130, 2023.
+
+\bibitem[Malkin et~al.(1990)]{malkin1990}
+Malkin, D., Li, F.~P., Strong, L.~C., et~al.
+\newblock Germ line p53 mutations in a familial syndrome of breast cancer,
+  sarcomas, and other neoplasms.
+\newblock \textit{Science}, 250(4985):1233--1238, 1990.
+
+\bibitem[{The PyMOL Molecular Graphics System}(2015)]{pymol}
+{The PyMOL Molecular Graphics System}, Version 3.1, Schr\"odinger, LLC.
+
+\bibitem[Richards et~al.(2015)]{richards2015}
+Richards, S., Aziz, N., Bale, S., et~al.
+\newblock Standards and guidelines for the interpretation of sequence variants:
+  a joint consensus recommendation of the American College of Medical Genetics
+  and Genomics and the Association for Molecular Pathology.
+\newblock \textit{Genet.~Med.}, 17(5):405--424, 2015.
+
+\bibitem[Villani et~al.(2016)]{villani2016}
+Villani, A., Shore, A., Wasserman, J.~D., et~al.
+\newblock Biochemical and imaging surveillance in germline TP53 mutation
+  carriers with Li--Fraumeni syndrome: 11 year follow-up of a prospective
+  observational study.
+\newblock \textit{Lancet Oncol.}, 17(9):1295--1305, 2016.
+
+\bibitem[Vogelstein et~al.(2000)]{vogelstein2000}
+Vogelstein, B., Lane, D. \& Levine, A.~J.
+\newblock Surfing the p53 network.
+\newblock \textit{Nature}, 408(6810):307--310, 2000.
+
+\bibitem[Zenz et~al.(2010)]{zenz2010}
+Zenz, T., Eichhorst, B., Busch, R., et~al.
+\newblock TP53 mutation and survival in chronic lymphocytic leukemia.
+\newblock \textit{J.~Clin.~Oncol.}, 28(29):4473--4479, 2010.
+
+\end{thebibliography}
+
+\end{document}

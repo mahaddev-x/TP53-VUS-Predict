@@ -1,0 +1,31 @@
+# TP53 Mutation Research — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# Core data science
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+scipy>=1.10
+
+# Bioinformatics
+biopython>=1.81
+
+# Protein language model (ESM-2)
+torch>=2.0
+transformers>=4.30
+fair-esm>=2.0
+
+# Structural biology
+pymol-open-source>=3.0     # or: conda install -c conda-forge pymol-open-source
+
+# Web / data fetching
+requests>=2.28
+
+# File parsing (used by AlphaMissense cross-reference)
+pefile>=2023.2.7
+
+# NCBI data access (via Biopython Entrez)
+# (included in biopython)
+
+# Optional: netCDF4 for PyMOL DLL dependencies on Windows
+# netCDF4>=1.6
