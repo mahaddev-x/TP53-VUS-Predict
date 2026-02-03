@@ -25,11 +25,12 @@
 \usepackage{microtype}
 \usepackage{authblk}
 \usepackage{lineno}
+\usepackage{balance}
 
 \linenumbers
 \bibliographystyle{unsrtnat}
 
-\graphicspath{{../figures/main/}{../figures/supplementary/}}
+\graphicspath{{figures/main/}{figures/supplementary/}{../figures/main/}{../figures/supplementary/}}
 
 \captionsetup{font=small,labelfont=bf}
 \setlength{\parskip}{0.3em}
@@ -418,7 +419,7 @@ interaction entirely (LLR $= -12.47$; AM $= 0.9996$) (Fig.~\ref{fig:renders}e).
 
 % ── Figure 4: Publication structural renders ─────────────────────────────
 
-\begin{figure*}[t]
+\begin{figure*}[p]
   \centering
   \begin{subfigure}[t]{0.32\textwidth}
     \includegraphics[width=\textwidth]{fig4a_L257R_structural.png}
@@ -609,7 +610,7 @@ a scalable component of variant classification pipelines, with direct
 implications for germline testing, somatic profiling, and patient selection
 for emerging p53-targeted therapies in precision oncology.
 
-\clearpage
+\balance
 % ══════════════════════════════════════════════════════════════════════════
 \section*{Data Availability}
 % ══════════════════════════════════════════════════════════════════════════
@@ -637,11 +638,11 @@ computational biology research effort.
 \begin{itemize}[nosep,leftmargin=1.5em]
   \item \textbf{Author:} Mahad Asif
   \item \textbf{Email:} \href{mailto:mahaddevx@gmail.com}{mahaddevx@gmail.com}
-  \item \textbf{GitHub:} \href{https://github.com/mahaddevx}{github.com/mahaddevx}
-  \item \textbf{Project Repository:} \href{https://github.com/mahaddevx/TP53-AI-Screening}{github.com/mahaddevx/TP53-AI-Screening}
+  \item \textbf{GitHub:} \href{https://github.com/mahaddev-x}{github.com/mahaddev-x}
+  \item \textbf{Project Repository:} \href{https://github.com/mahaddev-x/TP53-VUS-Predict}{github.com/mahaddev-x/TP53-VUS-Predict}
 \end{itemize}
 
-\bigskip
+\medskip
 \noindent
 All source code, scored variant tables, structural analysis outputs, and
 PyMOL render scripts used in this study are publicly available in the
@@ -651,6 +652,7 @@ project repository above.
 % Supplementary Figures
 % ══════════════════════════════════════════════════════════════════════════
 
+\clearpage
 \onecolumn
 \pagestyle{plain}
 \appendix
