@@ -193,7 +193,7 @@ TP53-VUS-Predict/
 ### 1. Clone and install dependencies
 
 ```bash
-git clone https://github.com/mahaddevx/TP53-VUS-Predict.git
+git clone https://github.com/mahaddev-x/TP53-VUS-Predict.git
 cd TP53-VUS-Predict
 pip install -r requirements.txt
 ```
