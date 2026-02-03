@@ -17,6 +17,7 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
 \usepackage{float}
+\usepackage{placeins}                   % \FloatBarrier
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{natbib}
@@ -35,10 +36,22 @@
 \captionsetup{font=small,labelfont=bf}
 \setlength{\parskip}{0.3em}
 
+% ── Float tuning (reduce blank pages) ────────────────────────────────────
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.8}
+\setcounter{topnumber}{4}
+\setcounter{bottomnumber}{4}
+\setcounter{totalnumber}{8}
+\setcounter{dbltopnumber}{4}
+
 % ── Title ─────────────────────────────────────────────────────────────────
 \title{%
-  \textbf{Ensemble AI Screening of 7{,}467 TP53 Variants:\\
-  Redefining Clinical Pathogenicity for Variants of Uncertain Significance}%
+  \textbf{Ensemble AI Screening of 1{,}211 TP53 Variants of Uncertain Significance\\
+  via ESM-2 and AlphaMissense}%
 }
 
 \author{Mahad Asif}
@@ -62,10 +75,9 @@ Significance (VUS), limiting their clinical utility in precision oncology.
 \textbf{Methods.}
 We applied two orthogonal deep-learning models---Meta's ESM-2
 (\texttt{esm2\_t33\_650M\_UR50D}; 650\,M parameters) and DeepMind's
-AlphaMissense---to score the complete landscape of 7{,}467 possible
-single-amino-acid substitutions in TP53 (UniProt P04637).  Of these,
-1{,}199 ClinVar VUS were matched to AlphaMissense predictions and
-cross-referenced.  Structural validation was performed against PDB 1TUP
+AlphaMissense---to screen 1{,}211 TP53 ClinVar VUS.  Each variant was scored
+by ESM-2 and cross-referenced against AlphaMissense predictions (UniProt
+P04637), yielding 1{,}199 successfully matched variants.  Structural validation was performed against PDB 1TUP
 (Cho et al., 1994).
 
 \textbf{Results.}
@@ -143,9 +155,9 @@ leveraging both models therefore provides complementary evidence that can
 strengthen confidence in pathogenicity assignments beyond what either model
 achieves alone.
 
-In this study, we systematically apply ESM-2 and AlphaMissense to the full
-landscape of 7{,}467 possible TP53 single-amino-acid substitutions and
-cross-reference the results against 1{,}211 ClinVar VUS.  We identify 349
+In this study, we systematically apply ESM-2 and AlphaMissense to
+1{,}211 TP53 ClinVar VUS, cross-referencing both models' predictions to
+identify high-confidence pathogenic candidates.  We identify 349
 variants with concordant high-risk scores, highlight five candidates with
 extreme pathogenicity signals and structurally validated damage mechanisms, and
 discuss the implications of these findings for clinical variant
@@ -278,7 +290,7 @@ classified as strongly damaging (LLR $\leq -4.0$), 232 (19.3\%) as likely
 damaging, 282 (23.5\%) as possibly damaging, and 305 (25.4\%) as likely
 neutral.
 
-\begin{figure}[t]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{fig1_llr_distribution.png}
   \caption{Distribution of ESM-2 log-likelihood ratio (LLR) scores across
@@ -297,7 +309,7 @@ damaging by ESM-2 (more negative LLR) were independently scored as highly
 pathogenic by AlphaMissense (score approaching 1.0).  The anti-correlation
 is expected given the inverse directionality of the two scoring scales.
 
-\begin{figure}[t]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{fig2_model_concordance.png}
   \caption{Scatter plot of ESM-2 LLR versus AlphaMissense pathogenicity score
@@ -323,7 +335,7 @@ than the transactivation domain (residues 1--92) or the tetramerization domain
 DNA-binding interface.  All five top-ranked variants mapped to the DNA-binding
 domain.
 
-\begin{figure}[t]
+\begin{figure}[!htb]
   \centering
   \includegraphics[width=\columnwidth]{fig3_domain_enrichment.png}
   \caption{ESM-2 LLR score distribution by TP53 functional domain.  The
@@ -339,7 +351,7 @@ Table~\ref{tab:top5} presents the five VUS with the most extreme concordant
 pathogenicity scores.  All five reside in the DNA-binding domain of p53 and
 exhibit structurally validated damage mechanisms.
 
-\begin{table*}[t]
+\begin{table*}[!htb]
   \centering
   \caption{Top five TP53 VUS with extreme concordant pathogenicity scores.
   All variants map to the DNA-binding domain (residues 102--292) of PDB 1TUP,
@@ -419,7 +431,7 @@ interaction entirely (LLR $= -12.47$; AM $= 0.9996$) (Fig.~\ref{fig:renders}e).
 
 % ── Figure 4: Publication structural renders ─────────────────────────────
 
-\begin{figure*}[p]
+\begin{figure*}[!htb]
   \centering
   \begin{subfigure}[t]{0.32\textwidth}
     \includegraphics[width=\textwidth]{fig4a_L257R_structural.png}
@@ -610,7 +622,6 @@ a scalable component of variant classification pipelines, with direct
 implications for germline testing, somatic profiling, and patient selection
 for emerging p53-targeted therapies in precision oncology.
 
-\balance
 % ══════════════════════════════════════════════════════════════════════════
 \section*{Data Availability}
 % ══════════════════════════════════════════════════════════════════════════
@@ -649,123 +660,7 @@ PyMOL render scripts used in this study are publicly available in the
 project repository above.
 
 % ══════════════════════════════════════════════════════════════════════════
-% Supplementary Figures
-% ══════════════════════════════════════════════════════════════════════════
-
-\clearpage
-\onecolumn
-\pagestyle{plain}
-\appendix
-\renewcommand{\thefigure}{S\arabic{figure}}
-\setcounter{figure}{0}
-
-\section*{Supplementary Figures}
-
-% ── Supplementary Figure S1: BioPython 3D structural context ─────────────
-
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1a_L257R_3d_context.png}
-    \caption{L257R --- Core disruption}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1b_V157D_3d_context.png}
-    \caption{V157D --- Core disruption}
-  \end{subfigure}
-
-  \smallskip
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1c_R248P_3d_context.png}
-    \caption{R248P --- Minor groove lost}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1d_C176R_3d_context.png}
-    \caption{C176R --- Zinc abolished}
-  \end{subfigure}
-
-  \smallskip
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1e_R280I_3d_context.png}
-    \caption{R280I --- Major groove lost}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS1f_overview_3d_context.png}
-    \caption{Overview --- All five sites}
-  \end{subfigure}
-
-  \caption{\textbf{Supplementary Figure~S1: Three-dimensional structural
-  context of the top five TP53 VUS (BioPython analysis).}
-  Each panel shows a 12\,\AA{} radius view centred on the variant
-  residue (green) in PDB 1TUP chain~B.  Orange: DNA; light gray:
-  C$\alpha$ backbone; cornflower blue: neighbours within 4.0\,\AA{};
-  red diamonds: DNA contacts; slate: Zn$^{2+}$.
-  (a)~L257R buried, no DNA contact.
-  (b)~V157D buried in $\beta$-sandwich.
-  (c)~R248P DNA minor groove contact.
-  (d)~C176R Zn$^{2+}$ coordination.
-  (e)~R280I DNA major groove contact.
-  (f)~Overview of all five positions on chain~B.}
-  \label{fig:supp_3d}
-\end{figure}
-
-% ── Supplementary Figure S2: Initial PyMOL renders ───────────────────────
-
-\newpage
-
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2a_L257R_pymol_v1.png}
-    \caption{L257R --- Hydrophobic core}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2b_V157D_pymol_v1.png}
-    \caption{V157D --- Hydrophobic core}
-  \end{subfigure}
-
-  \smallskip
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2c_R248P_pymol_v1.png}
-    \caption{R248P --- DNA minor groove}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2d_C176R_pymol_v1.png}
-    \caption{C176R --- Zinc coordination}
-  \end{subfigure}
-
-  \smallskip
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2e_R280I_pymol_v1.png}
-    \caption{R280I --- DNA major groove}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.38\textwidth}
-    \includegraphics[width=\textwidth]{figS2f_overview_pymol_v1.png}
-    \caption{Overview --- All five sites}
-  \end{subfigure}
-
-  \caption{\textbf{Supplementary Figure~S2: Initial PyMOL ray-traced renders
-  of the top five TP53 VUS (single-residue view).}
-  Generated via a scripted \texttt{.pml} pipeline from PDB 1TUP.  Each panel
-  shows the wild-type residue (green sticks) in context: protein cartoon
-  (gray), DNA (orange), Zn$^{2+}$ (slate spheres).  Neighbours within
-  4.0\,\AA{} shown as light-blue sticks; DNA contacts as red dashes; zinc
-  coordination as slate dashes.  These renders show only the wild-type
-  residue, in contrast to Fig.~\ref{fig:renders} which overlays both
-  wild-type and mutant rotamers.
-  All panels ray-traced at 2{,}400$\times$1{,}800 pixels, 300\,DPI.
-  (a)~L257R buried in the hydrophobic core.
-  (b)~V157D in the $\beta$-sandwich interior.
-  (c)~R248P with DNA minor groove contacts visible.
-  (d)~C176R with zinc coordination bonds.
-  (e)~R280I with DNA major groove contacts.
-  (f)~Overview of all five variant positions as coloured spheres on the
-  full p53--DNA complex.}
-  \label{fig:supp_pymol}
-\end{figure}
-
-% ══════════════════════════════════════════════════════════════════════════
-% References
+% References (two-column, before supplementary)
 % ══════════════════════════════════════════════════════════════════════════
 
 \begin{thebibliography}{30}
@@ -895,5 +790,121 @@ Zenz, T., Eichhorst, B., Busch, R., et~al.
 \newblock \textit{J.~Clin.~Oncol.}, 28(29):4473--4479, 2010.
 
 \end{thebibliography}
+
+% ══════════════════════════════════════════════════════════════════════════
+% Supplementary Figures
+% ══════════════════════════════════════════════════════════════════════════
+
+\clearpage
+\onecolumn
+\pagestyle{plain}
+\appendix
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{figure}{0}
+
+\section*{Supplementary Figures}
+
+% ── Supplementary Figure S1: BioPython 3D structural context ─────────────
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1a_L257R_3d_context.png}
+    \caption{L257R --- Core disruption}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1b_V157D_3d_context.png}
+    \caption{V157D --- Core disruption}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1c_R248P_3d_context.png}
+    \caption{R248P --- Minor groove lost}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1d_C176R_3d_context.png}
+    \caption{C176R --- Zinc abolished}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1e_R280I_3d_context.png}
+    \caption{R280I --- Major groove lost}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS1f_overview_3d_context.png}
+    \caption{Overview --- All five sites}
+  \end{subfigure}
+
+  \caption{\textbf{Supplementary Figure~S1: Three-dimensional structural
+  context of the top five TP53 VUS (BioPython analysis).}
+  Each panel shows a 12\,\AA{} radius view centred on the variant
+  residue (green) in PDB 1TUP chain~B.  Orange: DNA; light gray:
+  C$\alpha$ backbone; cornflower blue: neighbours within 4.0\,\AA{};
+  red diamonds: DNA contacts; slate: Zn$^{2+}$.
+  (a)~L257R buried, no DNA contact.
+  (b)~V157D buried in $\beta$-sandwich.
+  (c)~R248P DNA minor groove contact.
+  (d)~C176R Zn$^{2+}$ coordination.
+  (e)~R280I DNA major groove contact.
+  (f)~Overview of all five positions on chain~B.}
+  \label{fig:supp_3d}
+\end{figure}
+
+% ── Supplementary Figure S2: Initial PyMOL renders ───────────────────────
+
+\newpage
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2a_L257R_pymol_v1.png}
+    \caption{L257R --- Hydrophobic core}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2b_V157D_pymol_v1.png}
+    \caption{V157D --- Hydrophobic core}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2c_R248P_pymol_v1.png}
+    \caption{R248P --- DNA minor groove}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2d_C176R_pymol_v1.png}
+    \caption{C176R --- Zinc coordination}
+  \end{subfigure}
+
+  \smallskip
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2e_R280I_pymol_v1.png}
+    \caption{R280I --- DNA major groove}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.38\textwidth}
+    \includegraphics[width=\textwidth]{figS2f_overview_pymol_v1.png}
+    \caption{Overview --- All five sites}
+  \end{subfigure}
+
+  \caption{\textbf{Supplementary Figure~S2: Initial PyMOL ray-traced renders
+  of the top five TP53 VUS (single-residue view).}
+  Generated via a scripted \texttt{.pml} pipeline from PDB 1TUP.  Each panel
+  shows the wild-type residue (green sticks) in context: protein cartoon
+  (gray), DNA (orange), Zn$^{2+}$ (slate spheres).  Neighbours within
+  4.0\,\AA{} shown as light-blue sticks; DNA contacts as red dashes; zinc
+  coordination as slate dashes.  These renders show only the wild-type
+  residue, in contrast to Fig.~\ref{fig:renders} which overlays both
+  wild-type and mutant rotamers.
+  All panels ray-traced at 2{,}400$\times$1{,}800 pixels, 300\,DPI.
+  (a)~L257R buried in the hydrophobic core.
+  (b)~V157D in the $\beta$-sandwich interior.
+  (c)~R248P with DNA minor groove contacts visible.
+  (d)~C176R with zinc coordination bonds.
+  (e)~R280I with DNA major groove contacts.
+  (f)~Overview of all five variant positions as coloured spheres on the
+  full p53--DNA complex.}
+  \label{fig:supp_pymol}
+\end{figure}
 
 \end{document}

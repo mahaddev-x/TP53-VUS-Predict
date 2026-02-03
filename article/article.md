@@ -6,7 +6,7 @@
 
 There are over 1,200 missense mutations in the TP53 gene — the single most mutated gene in human cancer — that sit in the NCBI ClinVar database labeled "Variant of Uncertain Significance." That label means clinicians can't act on them. Can't use them for genetic counseling. Can't use them to select patients for clinical trials. They're stuck in limbo.
 
-I built a Python pipeline that takes two independent AI models — Meta's **ESM-2** protein language model and Google DeepMind's **AlphaMissense** pathogenicity predictor — and cross-references their scores across all 7,467 possible TP53 single-amino-acid substitutions. When both models independently agree that a variant is damaging, that's not one opinion. That's convergent evidence from two fundamentally different architectures trained on fundamentally different data.
+I built a Python pipeline that takes two independent AI models — Meta's **ESM-2** protein language model and Google DeepMind's **AlphaMissense** pathogenicity predictor — and cross-references their scores across 1,211 TP53 variants of uncertain significance from ClinVar. When both models independently agree that a variant is damaging, that's not one opinion. That's convergent evidence from two fundamentally different architectures trained on fundamentally different data.
 
 The result: **349 variants** flagged as high-risk by both models. Five of those variants scored so extreme that structural analysis confirms, residue by residue, exactly how they break the protein.
 
@@ -196,7 +196,7 @@ These are computational predictions — they do not constitute functional eviden
 
 The full pipeline — every script, every scored variant, every figure, and the complete LaTeX manuscript — is open source:
 
-**[github.com/mahaddevx/TP53-AI-Screening](https://github.com/mahaddevx/TP53-AI-Screening)**
+**[github.com/mahaddev-x/TP53-AI-Predict](https://github.com/mahaddev-x/TP53-AI-Predict)**
 
 What's inside:
 - `scripts/tp53_variant_analysis.py` — ClinVar data retrieval
@@ -221,7 +221,7 @@ What's inside:
 If you work in computational biology, clinical genetics, or cancer genomics — or if you're a developer who wants to contribute to open-source cancer research — I'd like to hear from you.
 
 **Email:** mahaddevx@gmail.com
-**GitHub:** [@mahaddevx](https://github.com/mahaddevx)
+**GitHub:** [@mahaddev-x](https://github.com/mahaddev-x)
 
 ---
 
